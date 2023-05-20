@@ -1,3 +1,4 @@
+import math
 import cv2
 from PIL import Image
 import matplotlib.pyplot as plot
@@ -33,11 +34,28 @@ def display_image(images, figsize=(20, 7), rows=None, cols=None, titles=None, mo
 
     plot.show()
 
+def distance_computation(u, v, height, width):
+    return np.sqrt((u - height//2)**2 + ((v - width//2)**2))
+
+def low_pass_filter(d0, n1, n2, n):
+    k1,k2 = np.meshgrid(np.arange(-round(n2/2)+1, math.floor(n2/2)+1), np.arange(-round(n1/2)+1, math.floor(n1/2)+1))
+    d = np.sqrt(k1**2 + k2**2)
+    h = 1 / (1 + (d / d0)**(2*n))
+    return h
+
+def high_pass_filter():
+    pass
 
 def human_perception():
-    img_low_pass = cv2.cvtColor(cv2.imread('images-project2/face11.jpg'), cv2.COLOR_BGR2RGB)
-    img_high_pass = cv2.cvtColor(cv2.imread('images-project2/face12.jpg'), cv2.COLOR_BGR2RGB)
-    display_image(images=[img_low_pass, img_high_pass], figsize=(10,8), rows=1, cols = 2, titles=['Original image', 'Original image'])
+    # Original images I am using for low and high pass filters
+    img_1 = cv2.imread('images-project2/face11.jpg', 0)
+    img_2 = cv2.cvtColor(cv2.imread('images-project2/face12.jpg'), cv2.COLOR_BGR2RGB)
+
+    img_low_pass = low_pass_filter(20,img_1.shape[0],img_1.shape[1],1)
+    fft_img = np.fft.fftshift(np.fft.fft2(img_1)) * img_low_pass
+    img_1_restored = np.fft.ifft2(np.fft.ifftshift(fft_img)).clip(0, 255).astype(np.uint8)
+
+    display_image(images=[img_1_restored, img_low_pass], figsize=(10,8), rows=2, cols = 2, titles=['Original image', 'Low Pass'])
 
 
 
