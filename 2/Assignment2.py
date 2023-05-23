@@ -3,6 +3,10 @@ import cv2
 from PIL import Image
 import matplotlib.pyplot as plot
 import numpy as np
+import warnings
+
+warnings.filterwarnings('ignore')
+np.seterr(divide="ignore", invalid="ignore")
 
 # This is my function to display images, where its first parameters can take in multiple images
 # The second parameter is a default size of the frame of displayed images, which is changeable
@@ -34,13 +38,23 @@ def display_image(images, figsize=(20, 7), rows=None, cols=None, titles=None, mo
 
     plot.show()
 
-def distance_computation(u, v, height, width):
-    return np.sqrt((u - height//2)**2 + ((v - width//2)**2))
+def distance_computation(height, width, u, v):
+    return np.sqrt((u - height//2)**2 + (v - width//2)**2)
 
-def low_pass_filter(d0, n1, n2, n):
-    k1,k2 = np.meshgrid(np.arange(-round(n2/2)+1, math.floor(n2/2)+1), np.arange(-round(n1/2)+1, math.floor(n1/2)+1))
-    d = np.sqrt(k1**2 + k2**2)
-    h = 1 / (1 + (d / d0)**(2*n))
+def butterworth_low_pass(image, d0, n):
+    h = np.zeros(image.shape[:2])
+    height, width = image.shape[:2]
+    for u in range(height):
+        for v in range(width):
+            h[u,v] = (1/(1 + (distance_computation(height, width, u, v)/d0)** (2*n)))
+    return h
+
+def butterworth_high_pass(image, d0, n):
+    h = np.zeros(image.shape[:2])
+    height, width = image.shape[:2]
+    for u in range(height):
+        for v in range(width):
+            h[u,v] = (1/(1 + (d0/distance_computation(height, width, u, v))** (2*n)))
     return h
 
 def high_pass_filter():
@@ -49,18 +63,29 @@ def high_pass_filter():
 def human_perception():
     # Original images I am using for low and high pass filters
     img_1 = cv2.imread('images-project2/face11.jpg', 0)
-    img_2 = cv2.cvtColor(cv2.imread('images-project2/face12.jpg'), cv2.COLOR_BGR2RGB)
+    img_2 = cv2.imread('images-project2/face12.jpg', 0)
 
-    img_low_pass = low_pass_filter(20,img_1.shape[0],img_1.shape[1],1)
-    fft_img = np.fft.fftshift(np.fft.fft2(img_1)) * img_low_pass
-    img_1_restored = np.fft.ifft2(np.fft.ifftshift(fft_img)).clip(0, 255).astype(np.uint8)
+    img_low_pass = butterworth_low_pass(img_1, 20, 2)
+    fft_img_1 = np.fft.fftshift(np.fft.fft2(img_1)) * img_low_pass
+    img_1_restored = np.fft.ifft2(np.fft.ifftshift(fft_img_1)).clip(0, 255).astype(np.uint8)
 
-    display_image(images=[img_1_restored, img_low_pass], figsize=(10,8), rows=2, cols = 2, titles=['Original image', 'Low Pass'])
+    img_high_pass = butterworth_high_pass(img_2, 20, 2)
+    fft_img_2 = np.fft.fftshift(np.fft.fft2(img_2)) * img_high_pass
+    img_2_restored = np.fft.ifft2(np.fft.ifftshift(fft_img_2)).clip(0, 255).astype(np.uint8)
 
+    combined_img = cv2.add(img_1_restored, img_2_restored)
+  
 
+    display_image(images=[img_1_restored, img_2_restored, combined_img], figsize=(10,5), rows=1, cols = 3, titles=['Low pass image', 'High pass image', 'Combined image'])
+
+def watermark():
+    kirby_img = cv2.imread('images-project2/kirby.jpg')
+    kirby_rgb = cv2.cvtColor(kirby_img, cv2.COLOR_BGR2RGB)
+    display_image(images=[kirby_rgb], figsize=(10,5), rows=1, cols = 3, titles=['Original image', 'Watermark image', 'Difference image'])
 
 
 def main():
     human_perception()
+    # watermark()
 
 main()
