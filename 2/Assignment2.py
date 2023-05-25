@@ -5,6 +5,8 @@ import matplotlib.pyplot as plot
 import numpy as np
 import warnings
 
+import scipy
+
 warnings.filterwarnings('ignore')
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -57,8 +59,6 @@ def butterworth_high_pass(image, d0, n):
             h[u,v] = (1/(1 + (d0/distance_computation(height, width, u, v))** (2*n)))
     return h
 
-def high_pass_filter():
-    pass
 
 def human_perception():
     # Original images I am using for low and high pass filters
@@ -78,14 +78,35 @@ def human_perception():
 
     display_image(images=[img_1_restored, img_2_restored, combined_img], figsize=(10,5), rows=1, cols = 3, titles=['Low pass image', 'High pass image', 'Combined image'])
 
+def dct2(a):
+    return scipy.fftpack.dct( scipy.fftpack.dct( a.T, norm='ortho' ).T, norm='ortho' )
+
+def idct2(a):
+    return scipy.fftpack.idct( scipy.fftpack.idct( a.T , norm='ortho').T,norm='ortho')
+
+def blockwise_dct(img):
+    imsize = img.shape
+    dct = np.zeros(imsize)
+
+    for i in np.r_[:imsize[0]:8]:
+        for j in np.r_[:imsize[1]:8]:
+            dct[i:i+8,j:j+8] = dct2( img[i:i+8,j:j+8] )
+
+def zigzag():
+    pass
+
 def watermark():
+    pos = 128
+    k = 10
     kirby_img = cv2.imread('images-project2/kirby.jpg')
-    kirby_rgb = cv2.cvtColor(kirby_img, cv2.COLOR_BGR2RGB)
-    display_image(images=[kirby_rgb], figsize=(10,5), rows=1, cols = 3, titles=['Original image', 'Watermark image', 'Difference image'])
+    kirby_gray = cv2.cvtColor(kirby_img, cv2.COLOR_BGR2GRAY)
+    dct_block = blockwise_dct(kirby_gray)
+
+    display_image(images=[kirby_gray], figsize=(10,5), rows=1, cols = 3, titles=['Original image', 'Watermark image', 'Difference image'])
 
 
 def main():
-    human_perception()
-    # watermark()
+    # human_perception()
+    watermark()
 
 main()
