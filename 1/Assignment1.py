@@ -1,5 +1,7 @@
 import cv2
 from PIL import Image
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plot
 import numpy as np
 
@@ -342,9 +344,9 @@ def geometric_transform():
     display_image(images=[cv2.cvtColor(img_transformed, cv2.COLOR_BGR2RGB)], figsize=(8,8), rows=1, cols=1, titles=['Image Transformed'])
 
 def main():
-    # color_spaces()
+    color_spaces()
     # edge_detection_filter()
-    fourier_transform()
+    # fourier_transform()
     # special_effects() 
     # geometric_transform()
 
